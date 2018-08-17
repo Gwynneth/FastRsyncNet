@@ -9,11 +9,13 @@ namespace FastRsync.Delta
 {
     public class BinaryDeltaWriter : IDeltaWriter
     {
+        private readonly Stream deltaStream;
         private readonly BinaryWriter writer;
         private readonly int readWriteBufferSize;
 
         public BinaryDeltaWriter(Stream stream, int readWriteBufferSize = 1024 * 1024)
         {
+            deltaStream = stream;
             writer = new BinaryWriter(stream);
             this.readWriteBufferSize = readWriteBufferSize;
         }
@@ -76,7 +78,7 @@ namespace FastRsync.Delta
                 while ((read = await source.ReadAsync(buffer, 0, (int)Math.Min(length - soFar, buffer.Length)).ConfigureAwait(false)) > 0)
                 {
                     soFar += read;
-                    await writer.BaseStream.WriteAsync(buffer, 0, read).ConfigureAwait(false);
+                    await deltaStream.WriteAsync(buffer, 0, read).ConfigureAwait(false);
                 }
             }
             finally
