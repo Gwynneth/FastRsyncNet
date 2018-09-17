@@ -27,14 +27,18 @@ namespace FastRsync.Delta
             var chunks = signature.Chunks;
 
             var newFileVerificationHashAlgorithm = SupportedAlgorithms.Hashing.Md5();
-            var newFileHash = newFileVerificationHashAlgorithm.ComputeHash(newFileStream);
+
             newFileStream.Seek(0, SeekOrigin.Begin);
-            
+            var newFileHash = newFileVerificationHashAlgorithm.ComputeHash(newFileStream);
+
+            newFileStream.Seek(0, SeekOrigin.Begin);    
             deltaWriter.WriteMetadata(new DeltaMetadata
             {
                 HashAlgorithm = signature.HashAlgorithm.Name,
                 ExpectedFileHashAlgorithm = newFileVerificationHashAlgorithm.Name,
-                ExpectedFileHash = Convert.ToBase64String(newFileHash)
+                ExpectedFileHash = Convert.ToBase64String(newFileHash),
+                BaseFileHash = signature.Metadata.BaseFileHash,
+                BaseFileHashAlgorithm = signature.Metadata.BaseFileHashAlgorithm
             });
 
             chunks = OrderChunksByChecksum(chunks);
@@ -144,14 +148,19 @@ namespace FastRsync.Delta
             var chunks = signature.Chunks;
 
             var newFileVerificationHashAlgorithm = SupportedAlgorithms.Hashing.Md5();
+
+            newFileStream.Seek(0, SeekOrigin.Begin);
             var newFileHash = await newFileVerificationHashAlgorithm.ComputeHashAsync(newFileStream).ConfigureAwait(false);
+
             newFileStream.Seek(0, SeekOrigin.Begin);
 
             deltaWriter.WriteMetadata(new DeltaMetadata
             {
                 HashAlgorithm = signature.HashAlgorithm.Name,
                 ExpectedFileHashAlgorithm = newFileVerificationHashAlgorithm.Name,
-                ExpectedFileHash = Convert.ToBase64String(newFileHash)
+                ExpectedFileHash = Convert.ToBase64String(newFileHash),
+                BaseFileHash = signature.Metadata.BaseFileHash,
+                BaseFileHashAlgorithm = signature.Metadata.BaseFileHashAlgorithm
             });
 
             chunks = OrderChunksByChecksum(chunks);

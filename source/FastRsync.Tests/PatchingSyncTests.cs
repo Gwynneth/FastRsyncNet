@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Threading.Tasks;
 using FastRsync.Core;
 using FastRsync.Delta;
 using FastRsync.Diagnostics;
@@ -27,7 +26,7 @@ namespace FastRsync.Tests
         public void PatchingSyncXXHash_ForNewData_PatchesFile(int baseNumberOfBytes, int newDataNumberOfBytes, short chunkSize)
         {
             // Arrange
-            var (baseDataStream, baseSignatureStream, newData, newDataStream) = PrepareTestData(baseNumberOfBytes, newDataNumberOfBytes, chunkSize);
+            var (baseDataStream, baseSignatureStream, newData, newDataStream) = Utils.PrepareTestData(baseNumberOfBytes, newDataNumberOfBytes, chunkSize);
 
             var progressReporter = Substitute.For<IProgress<ProgressReport>>();
 
@@ -108,27 +107,6 @@ namespace FastRsync.Tests
             // Assert
             CollectionAssert.AreEqual(newData, patchedDataStream.ToArray());
             progressReporter.Received().Report(Arg.Any<ProgressReport>());
-        }
-        
-        private static (MemoryStream baseDataStream, MemoryStream baseSignatureStream, byte[] newData, MemoryStream newDataStream) PrepareTestData(int baseNumberOfBytes, int newDataNumberOfBytes,
-            short chunkSize)
-        {
-            var baseData = new byte[baseNumberOfBytes];
-            new Random().NextBytes(baseData);
-            var baseDataStream = new MemoryStream(baseData);
-            var baseSignatureStream = new MemoryStream();
-
-            var signatureBuilder = new SignatureBuilder
-            {
-                ChunkSize = chunkSize
-            };
-            signatureBuilder.Build(baseDataStream, new SignatureWriter(baseSignatureStream));
-            baseSignatureStream.Seek(0, SeekOrigin.Begin);
-
-            var newData = new byte[newDataNumberOfBytes];
-            new Random().NextBytes(newData);
-            var newDataStream = new MemoryStream(newData);
-            return (baseDataStream, baseSignatureStream, newData, newDataStream);
         }
 
         private static (MemoryStream baseDataStream, MemoryStream baseSignatureStream, byte[] newData, MemoryStream newDataStream) PrepareTestDataWithOctodiffSignature(int baseNumberOfBytes, int newDataNumberOfBytes,

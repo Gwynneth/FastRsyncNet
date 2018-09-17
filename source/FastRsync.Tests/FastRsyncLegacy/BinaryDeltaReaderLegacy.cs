@@ -1,16 +1,55 @@
-using System;
+﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using FastRsync.Core;
+using FastRsync.Delta;
 using FastRsync.Diagnostics;
 using FastRsync.Hash;
 using FastRsync.Signature;
 using Newtonsoft.Json;
 
-namespace FastRsync.Delta
+namespace FastRsync.Tests.FastRsyncLegacy
 {
-    public class BinaryDeltaReader : IDeltaReader
+    internal class BinaryFormat
+    {
+        public const int SignatureFormatHeaderLength = 7; // OCTOSIG or FRSNCSG
+        public const int DeltaFormatHeaderLength = 9; // OCTODELTA or FRSNCDLTA
+
+        public const byte CopyCommand = 0x60;
+        public const byte DataCommand = 0x80;
+    }
+
+    internal class OctoBinaryFormat
+    {
+        public static readonly byte[] SignatureHeader = Encoding.ASCII.GetBytes("OCTOSIG");
+        public static readonly byte[] DeltaHeader = Encoding.ASCII.GetBytes("OCTODELTA");
+        public static readonly byte[] EndOfMetadata = Encoding.ASCII.GetBytes(">>>");
+
+        public const byte Version = 0x01;
+    }
+
+    internal class FastRsyncBinaryFormat
+    {
+        public static readonly byte[] SignatureHeader = Encoding.ASCII.GetBytes("FRSNCSG");
+        public static readonly byte[] DeltaHeader = Encoding.ASCII.GetBytes("FRSNCDLTA");
+
+        public const byte Version = 0x01;
+    }
+
+    public sealed class ProgressReport
+    {
+        public ProgressOperationType Operation { get; internal set; }
+
+        public long CurrentPosition { get; internal set; }
+
+        public long Total { get; internal set; }
+    }
+
+    internal class BinaryDeltaReaderLegacy : IDeltaReaderLegacy
     {
         private readonly BinaryReader reader;
         private readonly IProgress<ProgressReport> progressReport;
@@ -18,17 +57,15 @@ namespace FastRsync.Delta
         private IHashAlgorithm hashAlgorithm;
         private readonly int readBufferSize;
 
-        public BinaryDeltaReader(Stream stream, IProgress<ProgressReport> progressHandler, int readBufferSize = 4 * 1024 * 1024)
+        public BinaryDeltaReaderLegacy(Stream stream, IProgress<ProgressReport> progressHandler, int readBufferSize = 4 * 1024 * 1024)
         {
             this.reader = new BinaryReader(stream);
             this.progressReport = progressHandler;
             this.readBufferSize = readBufferSize;
         }
 
-        private DeltaMetadata _metadata;
-        private RsyncFormatType type;
-
-        public DeltaMetadata Metadata
+        private DeltaMetadataLegacy _metadata;
+        public DeltaMetadataLegacy Metadata
         {
             get
             {
@@ -37,14 +74,7 @@ namespace FastRsync.Delta
             }
         }
 
-        public RsyncFormatType Type
-        {
-            get
-            {
-                ReadMetadata();
-                return type;
-            }
-        }
+        public RsyncFormatType Type { get; private set; }
 
         public byte[] ExpectedHash
         {
@@ -85,7 +115,7 @@ namespace FastRsync.Delta
                 return;
             }
 
-            throw new InvalidDataException("The delta file uses a different file format than this program can handle."); 
+            throw new InvalidDataException("The delta file uses a different file format than this program can handle.");
         }
 
         private void ReadFastRsyncDeltaHeader()
@@ -95,12 +125,12 @@ namespace FastRsync.Delta
                 throw new InvalidDataException("The delta file uses a newer file format than this program can handle.");
 
             var metadataStr = reader.ReadString();
-            _metadata = JsonConvert.DeserializeObject<DeltaMetadata>(metadataStr, JsonSerializationSettings.JsonSettings);
+            _metadata = JsonConvert.DeserializeObject<DeltaMetadataLegacy>(metadataStr, JsonSerializationSettings.JsonSettings);
 
             hashAlgorithm = SupportedAlgorithms.Hashing.Create(_metadata.HashAlgorithm);
             expectedHash = Convert.FromBase64String(_metadata.ExpectedFileHash);
 
-            type = RsyncFormatType.FastRsync;
+            Type = RsyncFormatType.FastRsync;
         }
 
         private void ReadOctoDeltaHeader()
@@ -118,18 +148,18 @@ namespace FastRsync.Delta
             if (!StructuralComparisons.StructuralEqualityComparer.Equals(OctoBinaryFormat.EndOfMetadata, endOfMeta))
                 throw new InvalidDataException("The delta file appears to be corrupt.");
 
-            _metadata = new DeltaMetadata
+            _metadata = new DeltaMetadataLegacy
             {
                 HashAlgorithm = hashAlgorithmName,
                 ExpectedFileHashAlgorithm = hashAlgorithmName,
                 ExpectedFileHash = Convert.ToBase64String(expectedHash)
             };
 
-            type = RsyncFormatType.Octodiff;
+            Type = RsyncFormatType.Octodiff;
         }
 
         public void Apply(
-            Action<byte[]> writeData, 
+            Action<byte[]> writeData,
             Action<long, long> copy)
         {
             var fileLength = reader.BaseStream.Length;
@@ -159,7 +189,7 @@ namespace FastRsync.Delta
                     long soFar = 0;
                     while (soFar < length)
                     {
-                        var bytes = reader.ReadBytes((int) Math.Min(length - soFar, readBufferSize));
+                        var bytes = reader.ReadBytes((int)Math.Min(length - soFar, readBufferSize));
                         soFar += bytes.Length;
                         writeData(bytes);
                     }
@@ -200,7 +230,7 @@ namespace FastRsync.Delta
                     long soFar = 0;
                     while (soFar < length)
                     {
-                        var bytesRead = await reader.BaseStream.ReadAsync(buffer, 0, (int) Math.Min(length - soFar, buffer.Length)).ConfigureAwait(false);
+                        var bytesRead = await reader.BaseStream.ReadAsync(buffer, 0, (int)Math.Min(length - soFar, buffer.Length)).ConfigureAwait(false);
                         var bytes = buffer;
                         if (bytesRead != buffer.Length)
                         {
