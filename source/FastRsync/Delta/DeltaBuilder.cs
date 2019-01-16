@@ -23,15 +23,15 @@ namespace FastRsync.Delta
 
         public void BuildDelta(Stream newFileStream, ISignatureReader signatureReader, IDeltaWriter deltaWriter)
         {
-            var signature = signatureReader.ReadSignature();
-            var chunks = signature.Chunks;
-
             var newFileVerificationHashAlgorithm = SupportedAlgorithms.Hashing.Md5();
-
             newFileStream.Seek(0, SeekOrigin.Begin);
             var newFileHash = newFileVerificationHashAlgorithm.ComputeHash(newFileStream);
+            newFileStream.Seek(0, SeekOrigin.Begin);
 
-            newFileStream.Seek(0, SeekOrigin.Begin);    
+            var signature = signatureReader.ReadSignature();
+            var chunks = OrderChunksByChecksum(signature.Chunks);
+            var chunkMap = CreateChunkMap(chunks, out int maxChunkSize, out int minChunkSize);
+
             deltaWriter.WriteMetadata(new DeltaMetadata
             {
                 HashAlgorithm = signature.HashAlgorithm.Name,
@@ -41,9 +41,7 @@ namespace FastRsync.Delta
                 BaseFileHashAlgorithm = signature.Metadata.BaseFileHashAlgorithm
             });
 
-            chunks = OrderChunksByChecksum(chunks);
-
-            var chunkMap = CreateChunkMap(chunks, out int maxChunkSize, out int minChunkSize);
+            var checksumAlgorithm = signature.RollingChecksumAlgorithm;
 
             var buffer = new byte[readBufferSize];
             long lastMatchPosition = 0;
@@ -62,8 +60,7 @@ namespace FastRsync.Delta
                 var read = newFileStream.Read(buffer, 0, buffer.Length);
                 if (read < 0)
                     break;
-
-                var checksumAlgorithm = signature.RollingChecksumAlgorithm;
+                
                 uint checksum = 0;
 
                 var remainingPossibleChunkSize = maxChunkSize;
@@ -84,7 +81,7 @@ namespace FastRsync.Delta
                     }
                     else
                     {
-                        var remove = buffer[i- 1];
+                        var remove = buffer[i - 1];
                         var add = buffer[i + remainingPossibleChunkSize - 1];
                         checksum = checksumAlgorithm.Rotate(checksum, remove, add, remainingPossibleChunkSize);
                     }
@@ -144,15 +141,14 @@ namespace FastRsync.Delta
 
         public async Task BuildDeltaAsync(Stream newFileStream, ISignatureReader signatureReader, IDeltaWriter deltaWriter)
         {
-            var signature = signatureReader.ReadSignature();
-            var chunks = signature.Chunks;
-
             var newFileVerificationHashAlgorithm = SupportedAlgorithms.Hashing.Md5();
-
             newFileStream.Seek(0, SeekOrigin.Begin);
             var newFileHash = await newFileVerificationHashAlgorithm.ComputeHashAsync(newFileStream).ConfigureAwait(false);
-
             newFileStream.Seek(0, SeekOrigin.Begin);
+
+            var signature = signatureReader.ReadSignature();
+            var chunks = OrderChunksByChecksum(signature.Chunks);
+            var chunkMap = CreateChunkMap(chunks, out int maxChunkSize, out int minChunkSize);
 
             deltaWriter.WriteMetadata(new DeltaMetadata
             {
@@ -163,9 +159,7 @@ namespace FastRsync.Delta
                 BaseFileHashAlgorithm = signature.Metadata.BaseFileHashAlgorithm
             });
 
-            chunks = OrderChunksByChecksum(chunks);
-
-            var chunkMap = CreateChunkMap(chunks, out int maxChunkSize, out int minChunkSize);
+            var checksumAlgorithm = signature.RollingChecksumAlgorithm;
 
             var buffer = new byte[readBufferSize];
             long lastMatchPosition = 0;
@@ -185,7 +179,6 @@ namespace FastRsync.Delta
                 if (read < 0)
                     break;
 
-                var checksumAlgorithm = signature.RollingChecksumAlgorithm;
                 uint checksum = 0;
 
                 var remainingPossibleChunkSize = maxChunkSize;

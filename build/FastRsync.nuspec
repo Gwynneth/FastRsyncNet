@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>FastRsyncNet</id>
-        <version>2.3.0</version>
+        <version>2.3.1</version>
         <authors>Grzegorz Blok</authors>
         <owners>Grzegorz Blok</owners>
         <licenseUrl>https://github.com/GrzegorzBlok/FastRsyncNet/blob/master/LICENSE</licenseUrl>
@@ -11,8 +11,20 @@
         <tags>sync rsync synchronization</tags>
         <description>.NET library for file synchronization based on Rsync algorithm. Optimized for speed and data size to achieve best network performance.</description>
         <dependencies>
-            <dependency id="System.Data.HashFunction.xxHash" version="2.0.0" />
-            <dependency id="Newtonsoft.Json" version="11.0.2" />
+		   <group targetFramework=".NETFramework4.5">
+			<dependency id="System.Data.HashFunction.xxHash" version="2.0.0" exclude="Build,Analyzers"  />
+			<dependency id="Newtonsoft.Json" version="11.0.2" exclude="Build,Analyzers"  />
+		  </group>
+
+		  <group targetFramework=".NETStandard1.3">
+			<dependency id="System.Data.HashFunction.xxHash" version="2.0.0" exclude="Build,Analyzers"  />
+			<dependency id="Newtonsoft.Json" version="11.0.2" exclude="Build,Analyzers"  />
+		  </group>
+
+		  <group targetFramework=".NETStandard2.0">
+			<dependency id="System.Data.HashFunction.xxHash" version="2.0.0" exclude="Build,Analyzers"  />
+			<dependency id="Newtonsoft.Json" version="11.0.2" exclude="Build,Analyzers"  />
+		  </group>
         </dependencies>
     </metadata>
     <files>
