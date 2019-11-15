@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using FastRsync.Core;
 using FastRsync.Delta;
 using FastRsync.Diagnostics;
@@ -7,6 +8,7 @@ using FastRsync.Signature;
 using NSubstitute;
 using NUnit.Framework;
 using System.Security.Cryptography;
+using NSubstitute.Core.SequenceChecking;
 
 namespace FastRsync.Tests
 {
@@ -20,22 +22,31 @@ namespace FastRsync.Tests
             try
             {
                 // Arrange
-                var (baseDataStream, baseSignatureStream, newDataStream) = PrepareTestData(originalFileName, newFileName);
+                var (baseDataStream, baseSignatureStream) = PrepareTestData(originalFileName);
 
                 var progressReporter = Substitute.For<IProgress<ProgressReport>>();
 
-                // Act
-                var deltaStream = new MemoryStream();
-                var deltaBuilder = new DeltaBuilder();
-                deltaBuilder.BuildDelta(newDataStream, new SignatureReader(baseSignatureStream, null), new AggregateCopyOperationsDecorator(new BinaryDeltaWriter(deltaStream)));
-                deltaStream.Seek(0, SeekOrigin.Begin);
+                var deltaFileName = Path.GetTempFileName();
+                var patchedFileName = Path.GetTempFileName();
 
-                var patchedDataStream = new FileStream(Path.GetTempFileName(), FileMode.CreateNew);
-                var deltaApplier = new DeltaApplier();
-                deltaApplier.Apply(baseDataStream, new BinaryDeltaReader(deltaStream, progressReporter), patchedDataStream);
+                // Act
+                using (var deltaStream = new FileStream(deltaFileName, FileMode.OpenOrCreate))
+                using (var patchedDataStream = new FileStream(patchedFileName, FileMode.OpenOrCreate)) 
+                using(var newDataStream = new FileStream(newFileName, FileMode.Open))
+                {
+                    var deltaBuilder = new DeltaBuilder();
+                    deltaBuilder.BuildDelta(newDataStream, new SignatureReader(baseSignatureStream, null),
+                        new AggregateCopyOperationsDecorator(new BinaryDeltaWriter(deltaStream)));
+                    deltaStream.Seek(0, SeekOrigin.Begin);
+
+                    var deltaApplier = new DeltaApplier();
+                    deltaApplier.Apply(baseDataStream, new BinaryDeltaReader(deltaStream, progressReporter),
+                        patchedDataStream);
+                }
 
                 // Assert
-                //CollectionAssert.AreEqual(newDataStream.ToArray(), patchedDataStream.ToArray());
+                Assert.AreEqual(new FileInfo(newFileName).Length, new FileInfo(patchedFileName).Length);
+                Assert.True(CompareFilesByHash(newFileName, patchedFileName));
                 progressReporter.Received().Report(Arg.Any<ProgressReport>());
             }
             catch (Exception e)
@@ -44,8 +55,7 @@ namespace FastRsync.Tests
             }
         }
 
-
-        public static (Stream baseDataStream, Stream baseSignatureStream, Stream newDataStream) PrepareTestData(string originalFileName, string newFileName)
+        public static (Stream baseDataStream, Stream baseSignatureStream) PrepareTestData(string originalFileName)
         {
             var baseDataStream = new FileStream(originalFileName, FileMode.Open);
             var baseSignatureStream = new MemoryStream();
@@ -53,9 +63,20 @@ namespace FastRsync.Tests
             var signatureBuilder = new SignatureBuilder();
             signatureBuilder.Build(baseDataStream, new SignatureWriter(baseSignatureStream));
             baseSignatureStream.Seek(0, SeekOrigin.Begin);
+            return (baseDataStream, baseSignatureStream);
+        }
 
-            var newDataStream = new FileStream(newFileName, FileMode.Open);
-            return (baseDataStream, baseSignatureStream, newDataStream);
+        public static bool CompareFilesByHash(string fileName1, string fileName2)
+        {
+            byte[] hash1, hash2;
+
+            using (var stream = File.OpenRead(fileName1))
+                hash1 = System.Security.Cryptography.MD5.Create().ComputeHash(stream);
+
+            using (var stream = File.OpenRead(fileName2))
+                hash2 = System.Security.Cryptography.MD5.Create().ComputeHash(stream);
+
+            return hash1.SequenceEqual(hash2);
         }
     }
 }

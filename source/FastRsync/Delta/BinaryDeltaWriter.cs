@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using FastRsync.Core;
 using Newtonsoft.Json;
@@ -45,7 +44,7 @@ namespace FastRsync.Delta
             {
                 source.Seek(offset, SeekOrigin.Begin);
 
-                var buffer = new byte[Math.Min((int)length, readWriteBufferSize)];
+                var buffer = new byte[(int)Math.Min(length, readWriteBufferSize)];
 
                 int read;
                 long soFar = 0;
@@ -71,7 +70,7 @@ namespace FastRsync.Delta
             {
                 source.Seek(offset, SeekOrigin.Begin);
 
-                var buffer = new byte[Math.Min((int)length, readWriteBufferSize)];
+                var buffer = new byte[(int)Math.Min(length, readWriteBufferSize)];
 
                 int read;
                 long soFar = 0;
