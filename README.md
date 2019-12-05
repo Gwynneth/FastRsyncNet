@@ -91,7 +91,7 @@ using (var basisStream = await basisBlob.OpenReadAsync())
 ```
 
 ### GZip compression that is rsync compatible [![NuGet](https://img.shields.io/nuget/v/FastRsyncNet.Compression.svg?style=flat)](https://www.nuget.org/packages/FastRsyncNet.Compression/)
-If you synchronize compressed file, a small change in a compressed file may force rsync algorithm to synchronize whole compressed file, instead of just the changed blocks. To fix this, a custom GZip compression method may be used that periodically reset the compressor state to make it block-sync friendly. Install FastRsyncNet.Compression package and use following method:
+If you synchronize compressed file, a small change in a compressed file may force rsync algorithm to synchronize whole compressed file, instead of just the changed blocks. To fix this, a custom GZip compression method may be used that periodically reset the compressor state to make it block-sync friendly. Install [FastRsyncNet.Compression](https://www.nuget.org/packages/FastRsyncNet.Compression/) package and use following method:
 ```csharp
 FastRsync.Compression.GZip.Compress(Stream sourceStream, Stream destStream)
 ```
