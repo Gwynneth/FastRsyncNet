@@ -95,3 +95,4 @@ If you synchronize compressed file, a small change in a compressed file may forc
 ```csharp
 FastRsync.Compression.GZip.Compress(Stream sourceStream, Stream destStream)
 ```
+To uncompress you may use any GZip method (e.g. System.IO.Compression.GZipStream).
