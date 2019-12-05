@@ -21,7 +21,7 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="..\source\FastRsync\bin\Release\net45\FastRsync.dll" target="lib\net45\FastRsyncCompression.dll" />
-        <file src="..\source\FastRsync\bin\Release\netstandard2.0\FastRsync.dll" target="lib\netstandard2.0\FastRsyncCompression.dll" />
+        <file src="..\source\FastRsync.Compression\bin\Release\net45\FastRsync.Compression.dll" target="lib\net45\FastRsync.Compression.dll" />
+        <file src="..\source\FastRsync.Compression\bin\Release\netstandard2.0\FastRsync.Compression.dll" target="lib\netstandard2.0\FastRsync.Compression.dll" />
     </files>
 </package>
