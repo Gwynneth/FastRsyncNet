@@ -8,7 +8,6 @@ using FastRsync.Signature;
 using NSubstitute;
 using NUnit.Framework;
 using System.Security.Cryptography;
-using NSubstitute.Core.SequenceChecking;
 
 namespace FastRsync.Tests
 {
@@ -16,7 +15,7 @@ namespace FastRsync.Tests
     public class PatchingBigFilesTests
     {
         [Test]
-        [TestCase(@"c:\repos\FastRsyncNet\source\FastRsync.Tests\bin\Debug\net472\bigfile1.bin", @"c:\repos\FastRsyncNet\source\FastRsync.Tests\bin\Debug\net472\bigfile2.bin")]
+        [TestCase(@"c:\bigfile1.bin", @"c:\bigfile2.bin")]
         public void PatchingSyncXXHash_BigFile(string originalFileName, string newFileName)
         {
             try
@@ -71,10 +70,10 @@ namespace FastRsync.Tests
             byte[] hash1, hash2;
 
             using (var stream = File.OpenRead(fileName1))
-                hash1 = System.Security.Cryptography.MD5.Create().ComputeHash(stream);
+                hash1 = MD5.Create().ComputeHash(stream);
 
             using (var stream = File.OpenRead(fileName2))
-                hash2 = System.Security.Cryptography.MD5.Create().ComputeHash(stream);
+                hash2 = MD5.Create().ComputeHash(stream);
 
             return hash1.SequenceEqual(hash2);
         }

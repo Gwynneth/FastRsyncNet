@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Octodiff", "Octodiff\Octodiff.csproj", "{BBA7CDC2-DE25-4131-89F2-506712178FC8}"
 EndProject
@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastRsync.Tests", "FastRsyn
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OctodiffAsync", "OctodiffAsync\OctodiffAsync.csproj", "{77157EEA-0EDE-4DDA-A611-D57A8F013CD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastRsync.Benchmarks", "FastRsync.Benchmarks\FastRsync.Benchmarks.csproj", "{040122B6-214A-470A-BEB0-A2779E7EE3EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastRsync.Benchmarks", "FastRsync.Benchmarks\FastRsync.Benchmarks.csproj", "{040122B6-214A-470A-BEB0-A2779E7EE3EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastRsync.Compression", "FastRsync.Compression\FastRsync.Compression.csproj", "{FA7C7A6D-68E6-445C-BD19-DD1FFBB34239}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{040122B6-214A-470A-BEB0-A2779E7EE3EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{040122B6-214A-470A-BEB0-A2779E7EE3EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{040122B6-214A-470A-BEB0-A2779E7EE3EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA7C7A6D-68E6-445C-BD19-DD1FFBB34239}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA7C7A6D-68E6-445C-BD19-DD1FFBB34239}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA7C7A6D-68E6-445C-BD19-DD1FFBB34239}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA7C7A6D-68E6-445C-BD19-DD1FFBB34239}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
