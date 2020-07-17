@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using FastRsync.Hash;
 using FastRsync.Signature;
@@ -18,7 +19,7 @@ namespace FastRsync.Delta
 
         Task ApplyAsync(
             Func<byte[], Task> writeData,
-            Func<long, long, Task> copy
+            Func<long, long, Task> copy, CancellationToken ct = default
         );
     }
 }
